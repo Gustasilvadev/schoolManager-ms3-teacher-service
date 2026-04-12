@@ -36,3 +36,34 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 - `refactor`: Refatoração de código sem alterar regra de negócio.
 - `style`: Formatação de código (linting, prettier).
 - `test`: Criação/alteração de testes de segurança ou unitários.
+
+---
+
+# 📡 Endpoints da API
+
+## 👨‍🏫 Teachers (ADMIN)
+
+| Método | Endpoint                          | Descrição                                      | Auth | Body |
+|--------|----------------------------------|-----------------------------------------------|------|------|
+| GET    | `/teachers/listTeachers`         | Lista professores (com paginação e filtros)   | ✅   | — |
+| GET    | `/teachers/listTeacherById/{id}` | Busca professor por ID                        | ✅   | — |
+| POST   | `/teachers/createTeacher`        | Cria novo professor                           | ✅   | teacher_name, teacher_cpf, teacher_email, user_id, teacher_status |
+| PUT    | `/teachers/updateTeacher/{id}`   | Atualiza dados do professor                   | ✅   | teacher_name, teacher_cpf, teacher_email, teacher_status |
+| DELETE | `/teachers/deleteTeacher/{id}`   | Deleta professor (lógico)                     | ✅   | — |
+
+---
+
+## 📚 Teacher Disciplines (ADMIN)
+
+| Método | Endpoint                                          | Descrição                                      | Auth | Body |
+|--------|--------------------------------------------------|-----------------------------------------------|------|------|
+| POST   | `/teachers/linkDiscipline/{id}`                  | Vincula disciplina ao professor               | ✅   | discipline_id |
+| DELETE | `/teachers/unlinkDiscipline/{id}/{disciplineId}` | Remove vínculo professor-disciplina           | ✅   | — |
+
+---
+
+## ❤️ Health Check
+
+| Método | Endpoint   | Descrição                  | Auth |
+|--------|-----------|---------------------------|------|
+| GET    | `/health` | Verifica status da API     | ❌   |
