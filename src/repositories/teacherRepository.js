@@ -5,27 +5,30 @@ const { TEACHER_STATUS } = require('../utils/constants');
  * Busca uma lista paginada de professores, aplica filtros opcionais (nome parcial e status) 
  * e retorna os resultados incluindo os dados das disciplinas vinculadas a cada professor.
  */
-const findAll = async (skip, take, filters = {}) => {
-  const where = {};
-  if (filters.name) where.teacher_name = { contains: filters.name };
-  if (filters.status !== undefined) where.teacher_status = filters.status;
+const findAll = async (skip, take, where = {}) => {
   return await prisma.teachers.findMany({
-    where,
+    where,               // ← usa o where recebido diretamente
     skip,
     take,
-    include: { teacher_disciplines: { include: { discipline: true } } }
+    orderBy: { teacher_id: 'asc' }
   });
 };
 
 const findById = async (id) => {
   return await prisma.teachers.findUnique({
-    where: { teacher_id: id },
-    include: { teacher_disciplines: { include: { discipline: true } } }
+    where: { teacher_id: id }
   });
+
 };
 
 const findByEmail = async (email) => {
   return await prisma.teachers.findUnique({ where: { teacher_email: email } });
+};
+
+const findByCpf = async (cpf) => {
+  return await prisma.teachers.findUnique({
+    where: { teacher_cpf: cpf }
+  });
 };
 
 const create = async (data) => {
@@ -43,11 +46,17 @@ const softDelete = async (id) => {
   });
 };
 
+const count = async (where = {}) => {
+  return await prisma.teachers.count({ where });
+};
+
 module.exports = { 
     findAll, 
     findById, 
-    findByEmail, 
+    findByEmail,
+    findByCpf,
     create, 
     update, 
-    softDelete 
+    softDelete,
+    count
 };

@@ -1,5 +1,4 @@
 const teacherRepo = require('../repositories/teacherRepository');
-const disciplineRepo = require('../repositories/disciplineRepository'); // assumindo que exista
 const teacherDisciplineRepo = require('../repositories/teacherDisciplineRepository');
 const { MESSAGES, TEACHER_STATUS } = require('../utils/constants');
 
@@ -33,10 +32,15 @@ const getAllTeachers = async (filters = {}, page = 1, limit = 10) => {
   const skip = (page - 1) * limit;
   const where = {};
 
-  if (filters.name) where.teacher_name = { contains: filters.name };
-  if (filters.cpf) where.teacher_cpf = { contains: filters.cpf };
-  if (filters.email) where.teacher_email = { contains: filters.email };
-  if (filters.status !== undefined) where.teacher_status = filters.status;
+   if (filters.name && filters.name.trim() !== '') {
+    where.teacher_name = { contains: filters.name };
+  }
+  if (filters.cpf && filters.cpf.trim() !== '') {
+    where.teacher_cpf = { contains: filters.cpf };
+  }
+  if (filters.email && filters.email.trim() !== '') {
+    where.teacher_email = { contains: filters.email };
+  }
 
   const teachers = await teacherRepo.findAll(skip, limit, where);
   const total = await teacherRepo.count(where);
