@@ -1,0 +1,379 @@
+openapi: 3.0.0
+info:
+  title: API SchoolManager - TeacherService
+  description: |
+    Serviço de Gestão de Professores e Coordenadores.
+    Responsável por CRUD de professores, vínculo com usuários do AuthService e habilitação de disciplinas.
+  version: 1.0.0
+  contact:
+    name: Suporte SchoolManager
+    email: suporte@schoolmanager.com
+
+servers:
+  - url: http://localhost:3003
+    description: Servidor de Desenvolvimento
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Teacher:
+      type: object
+      properties:
+        teacher_id:
+          type: integer
+          example: 1
+        teacher_name:
+          type: string
+          example: "João Silva"
+        teacher_cpf:
+          type: string
+          example: "123.456.789-00"
+        teacher_email:
+          type: string
+          example: "joao@escola.com"
+        teacher_status:
+          type: integer
+          description: "1=ativo, 0=inativo, 2=excluído"
+          example: 1
+        user_id:
+          type: integer
+          description: "ID do usuário no AuthService"
+          example: 10
+        teacher_disciplines:
+          type: array
+          items:
+            $ref: '#/components/schemas/TeacherDiscipline'
+    TeacherDiscipline:
+      type: object
+      properties:
+        teacher_id:
+          type: integer
+        discipline_id:
+          type: integer
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+    TeacherListResponse:
+      type: object
+      properties:
+        teachers:
+          type: array
+          items:
+            $ref: '#/components/schemas/Teacher'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+paths:
+  /health:
+    get:
+      summary: Verifica saúde do serviço
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Serviço operacional
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "OK"
+                  service:
+                    type: string
+                    example: "teacher-service"
+
+  /teachers/listTeachers:
+    get:
+      summary: Lista professores com paginação e filtros (apenas ADMIN)
+      tags:
+        - Teachers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: name
+          in: query
+          schema:
+            type: string
+          description: Filtro por nome (contém)
+        - name: cpf
+          in: query
+          schema:
+            type: string
+          description: Filtro por CPF (contém)
+        - name: email
+          in: query
+          schema:
+            type: string
+          description: Filtro por e-mail (contém)
+        - name: status
+          in: query
+          schema:
+            type: integer
+            enum: [0, 1, 2]
+          description: Status do professor
+      responses:
+        '200':
+          description: Lista de professores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherListResponse'
+        '401':
+          description: Token não fornecido ou inválido
+        '403':
+          description: Acesso negado (requer papel ADMIN)
+
+  /teachers/createTeacher:
+    post:
+      summary: Cria um novo professor (apenas ADMIN)
+      tags:
+        - Teachers
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - teacher_name
+                - teacher_cpf
+                - teacher_email
+                - user_id
+              properties:
+                teacher_name:
+                  type: string
+                  maxLength: 45
+                  example: "Maria Oliveira"
+                teacher_cpf:
+                  type: string
+                  maxLength: 15
+                  example: "987.654.321-00"
+                teacher_email:
+                  type: string
+                  format: email
+                  example: "maria@escola.com"
+                user_id:
+                  type: integer
+                  example: 5
+                teacher_status:
+                  type: integer
+                  enum: [0, 1, 2]
+                  default: 1
+      responses:
+        '201':
+          description: Professor criado com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+        '400':
+          description: E-mail ou CPF já cadastrado
+        '401':
+          description: Não autenticado
+        '403':
+          description: Acesso negado
+
+  /teachers/listTeacherById/{id}:
+    get:
+      summary: Busca professor por ID (apenas ADMIN)
+      tags:
+        - Teachers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do professor
+      responses:
+        '200':
+          description: Dados do professor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+        '404':
+          description: Professor não encontrado
+        '401':
+          description: Não autenticado
+        '403':
+          description: Acesso negado
+
+  /teachers/updateTeacher/{id}:
+    put:
+      summary: Atualiza dados do professor (apenas ADMIN)
+      tags:
+        - Teachers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teacher_name:
+                  type: string
+                teacher_cpf:
+                  type: string
+                teacher_email:
+                  type: string
+                teacher_status:
+                  type: integer
+                  enum: [0, 1, 2]
+      responses:
+        '200':
+          description: Professor atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+        '400':
+          description: E-mail ou CPF já existe
+        '404':
+          description: Professor não encontrado
+        '401':
+          description: Não autenticado
+        '403':
+          description: Acesso negado
+
+  /teachers/deleteTeacher/{id}:
+    delete:
+      summary: Exclusão lógica do professor (apenas ADMIN)
+      tags:
+        - Teachers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Professor desativado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Professor não encontrado
+        '401':
+          description: Não autenticado
+        '403':
+          description: Acesso negado
+
+  /teachers/linkDiscipline/{id}:
+    post:
+      summary: Associa uma disciplina a um professor (apenas ADMIN)
+      tags:
+        - Teacher Disciplines
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do professor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - discipline_id
+              properties:
+                discipline_id:
+                  type: integer
+                  example: 10
+      responses:
+        '201':
+          description: Associação criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeacherDiscipline'
+        '400':
+          description: Disciplina já associada ou dados inválidos
+        '404':
+          description: Professor não encontrado
+        '401':
+          description: Não autenticado
+        '403':
+          description: Acesso negado
+
+  /teachers/unlinkDiscipline/{id}/{disciplineId}:
+    delete:
+      summary: Remove associação entre professor e disciplina (apenas ADMIN)
+      tags:
+        - Teacher Disciplines
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do professor
+        - name: disciplineId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID da disciplina
+      responses:
+        '200':
+          description: Associação removida com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Não autenticado
+        '403':
+          description: Acesso negado
