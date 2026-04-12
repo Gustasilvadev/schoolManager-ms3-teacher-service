@@ -1,0 +1,32 @@
+{
+  "name": "schoolmanager-ms3-teacher-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gustasilvadev/schoolManager-ms3-teacher-service.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Gustasilvadev/schoolManager-ms3-teacher-service/issues"
+  },
+  "homepage": "https://github.com/Gustasilvadev/schoolManager-ms3-teacher-service#readme",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1",
+    "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14",
+    "prisma": "^5.22.0"
+  }
+}
