@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model teacher_disciplines {
+  teacher_disciplines_id Int      @id @default(autoincrement())
+  teacher_id             Int
+  discipline_id          Int
+  teachers               teachers @relation(fields: [teacher_id], references: [teacher_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_teacher_id")
+
+  @@index([teacher_id], map: "fk_teacher_id_idx")
+}
+
+model teachers {
+  teacher_id          Int                   @id @default(autoincrement())
+  teacher_name        String                @db.VarChar(45)
+  teacher_cpf         String                @db.VarChar(45)
+  teacher_email       String                @unique(map: "teacher_email") @db.VarChar(45)
+  teacher_status      Int
+  user_id             Int
+  teacher_disciplines teacher_disciplines[]
+}
