@@ -40,10 +40,11 @@ const update = async (id, data) => {
 };
 
 const softDelete = async (id) => {
-  return await prisma.teachers.update({
+  const result = await prisma.teachers.update({
     where: { teacher_id: id },
     data: { teacher_status: TEACHER_STATUS.DELETED }
   });
+  return result;
 };
 
 const count = async (where = {}) => {
