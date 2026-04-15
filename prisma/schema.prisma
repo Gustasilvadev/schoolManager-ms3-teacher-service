@@ -19,8 +19,8 @@ model teacher_disciplines {
 model teachers {
   teacher_id          Int                   @id @default(autoincrement())
   teacher_name        String                @db.VarChar(45)
-  teacher_cpf         String                @unique(map: "teacher_cpf") @db.VarChar(15)
-  teacher_email       String                @unique(map: "teacher_email") @db.VarChar(45)
+  teacher_cpf         String                @unique(map: "teacher_cpf_UNIQUE") @db.VarChar(15)
+  teacher_email       String                @unique(map: "teacher_email_UNIQUE") @db.VarChar(45)
   teacher_status      Int
   user_id             Int
   teacher_disciplines teacher_disciplines[]
