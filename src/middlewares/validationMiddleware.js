@@ -55,10 +55,6 @@ const validateUpdateTeacher = [
 
 // Validação para vincular disciplina a professor
 const validateLinkDiscipline = [
-  body('teacher_id')
-    .notEmpty().withMessage('ID do professor é obrigatório')
-    .isInt().withMessage('ID do professor deve ser um número inteiro'),
-  
   body('discipline_id')
     .notEmpty().withMessage('ID da disciplina é obrigatório')
     .isInt().withMessage('ID da disciplina deve ser um número inteiro'),
