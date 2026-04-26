@@ -31,6 +31,12 @@ const findByCpf = async (cpf) => {
   });
 };
 
+const findByUserId = async (userId) => {
+  return await prisma.teachers.findFirst({
+    where: { user_id: userId, teacher_status: TEACHER_STATUS.ACTIVE }
+  });
+};
+
 const create = async (data) => {
   return await prisma.teachers.create({ data });
 };
@@ -51,13 +57,14 @@ const count = async (where = {}) => {
   return await prisma.teachers.count({ where });
 };
 
-module.exports = { 
-    findAll, 
-    findById, 
+module.exports = {
+    findAll,
+    findById,
     findByEmail,
     findByCpf,
-    create, 
-    update, 
+    findByUserId,
+    create,
+    update,
     softDelete,
     count
 };
