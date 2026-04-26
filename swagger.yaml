@@ -10,7 +10,7 @@ info:
     email: suporte@schoolmanager.com
 
 servers:
-  - url: http://localhost:3003
+  - url: http://localhost:3003/api
     description: Servidor de Desenvolvimento
 
 components:
@@ -226,7 +226,7 @@ paths:
         '403':
           description: Acesso negado
 
-  /teachers/updateTeacher/{id}:
+  /teachers/updateTeacherById/{id}:
     put:
       summary: Atualiza dados do professor (apenas ADMIN)
       tags:
@@ -271,7 +271,7 @@ paths:
         '403':
           description: Acesso negado
 
-  /teachers/deleteTeacher/{id}:
+  /teachers/deleteTeacherById/{id}:
     delete:
       summary: Exclusão lógica do professor (apenas ADMIN)
       tags:

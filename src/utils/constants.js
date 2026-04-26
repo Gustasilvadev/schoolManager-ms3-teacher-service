@@ -1,7 +1,7 @@
 module.exports = {
   ROLES: {
-    ADMIN: 'Administrador',
-    TEACHER: 'Professor'
+    ADMIN: 'ADMIN',
+    TEACHER: 'TEACHER'
   },
   TEACHER_STATUS: {
     ACTIVE: 1,
