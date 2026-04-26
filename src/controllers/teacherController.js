@@ -49,6 +49,39 @@ const getTeacherById = async (req, res, next) => {
   }
 };
 
+// Endpoint interno serviço-a-serviço (consumido pelo MS1 no login).
+// Não exige JWT pois é chamado antes do token existir.
+const getTeacherByUserId = async (req, res, next) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'userId inválido' });
+    }
+    const teacher = await teacherService.getTeacherByUserId(userId);
+    return res.status(HTTP_STATUS.OK).json({ teacher_id: teacher.teacher_id });
+  } catch (error) {
+    if (error.message === MESSAGES.TEACHER_NOT_FOUND) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    next(error);
+  }
+};
+
+// Endpoint interno serviço-a-serviço (consumido pelo MS4 ao validar
+// alocação de professor em turma). Retorna IDs das disciplinas habilitadas.
+const getTeacherDisciplines = async (req, res, next) => {
+  try {
+    const teacherId = parseInt(req.params.teacherId);
+    if (!Number.isInteger(teacherId) || teacherId <= 0) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'teacherId inválido' });
+    }
+    const ids = await teacherService.getDisciplineIdsByTeacher(teacherId);
+    return res.status(HTTP_STATUS.OK).json({ discipline_ids: ids });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateTeacher = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -116,6 +149,8 @@ module.exports = {
   createTeacher,
   getAllTeachers,
   getTeacherById,
+  getTeacherByUserId,
+  getTeacherDisciplines,
   updateTeacher,
   deleteTeacher,
   associateDiscipline,

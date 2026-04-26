@@ -37,8 +37,18 @@ const findByTeacherAndDiscipline = async (teacherId, disciplineId) => {
   });
 };
 
+/**
+ * Lista todas as disciplinas habilitadas para um professor
+ */
+const findByTeacher = async (teacherId) => {
+  return await prisma.teacher_disciplines.findMany({
+    where: { teacher_id: teacherId }
+  });
+};
+
 module.exports = {
   associate,
   removeAssociation,
-  findByTeacherAndDiscipline
+  findByTeacherAndDiscipline,
+  findByTeacher
 };

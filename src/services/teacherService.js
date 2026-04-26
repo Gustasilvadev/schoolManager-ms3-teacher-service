@@ -56,6 +56,17 @@ const getTeacherById = async (id) => {
   return teacher;
 };
 
+const getTeacherByUserId = async (userId) => {
+  const teacher = await teacherRepo.findByUserId(userId);
+  if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  return teacher;
+};
+
+const getDisciplineIdsByTeacher = async (teacherId) => {
+  const links = await teacherDisciplineRepo.findByTeacher(teacherId);
+  return links.map((l) => l.discipline_id);
+};
+
 /**
  * Atualiza dados de um professor
  */
@@ -111,6 +122,8 @@ module.exports = {
   createTeacher,
   getAllTeachers,
   getTeacherById,
+  getTeacherByUserId,
+  getDisciplineIdsByTeacher,
   updateTeacher,
   deleteTeacher,
   associateDiscipline,
