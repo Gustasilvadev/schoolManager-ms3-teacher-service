@@ -2,12 +2,11 @@ const prisma = require('../config/prisma');
 const { TEACHER_STATUS } = require('../utils/constants');
 
 /**
- * Busca uma lista paginada de professores, aplica filtros opcionais (nome parcial e status) 
- * e retorna os resultados incluindo os dados das disciplinas vinculadas a cada professor.
+ * Busca uma lista paginada de professores aplicando filtros opcionais
  */
 const findAll = async (skip, take, where = {}) => {
   return await prisma.teachers.findMany({
-    where,               // ← usa o where recebido diretamente
+    where,
     skip,
     take,
     orderBy: { teacher_id: 'asc' }

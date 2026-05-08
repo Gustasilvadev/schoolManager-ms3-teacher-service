@@ -1,4 +1,3 @@
-// src/repositories/teacherDisciplineRepository.js
 const prisma = require('../config/prisma');
 
 /**

@@ -13,7 +13,7 @@ const verifyToken = (token, secret = null) => {
 };
 
 /**
- * Extrai o token do header Authorization (Bearer token).
+ * Extrai o token do header Authorization
  */
 const extractTokenFromHeader = (authHeader) => {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
