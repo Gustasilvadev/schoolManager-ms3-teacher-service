@@ -62,8 +62,30 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 
 ---
 
+## 🔌 Endpoints Internos (Service-to-Service, sem JWT)
+
+Endpoints públicos consumidos por outros microsserviços.
+
+| Método | Endpoint                            | Consumidor | Finalidade                                                                |
+|--------|-------------------------------------|------------|---------------------------------------------------------------------------|
+| GET    | `/teachers/byUser/{userId}`         | MS1        | Enriquece o JWT no login com `teacher_id` quando role=TEACHER             |
+| GET    | `/teachers/byCpf/{cpf}`             | MS1        | Validação prévia ao criar usuário — checa se CPF já existe no MS3         |
+| GET    | `/teachers/byEmail/{email}`         | MS1        | Validação prévia ao criar usuário — checa se e-mail já existe no MS3      |
+| GET    | `/teachers/disciplines/{teacherId}` | MS4        | Lista disciplinas habilitadas, usado ao alocar professor em turma         |
+
+---
+
 ## ❤️ Health Check
 
 | Método | Endpoint   | Descrição                  | Auth |
 |--------|-----------|---------------------------|------|
 | GET    | `/health` | Verifica status da API     | ❌   |
+
+---
+
+## 📨 Eventos RabbitMQ (Consumer)
+
+| Evento        | Routing Key    | Ação no MS3                                                                      | Idempotência                                  |
+|---------------|----------------|----------------------------------------------------------------------------------|-----------------------------------------------|
+| `UserCreated` | `user.created` | Se o payload contém `teacher_name` e `teacher_cpf`, cria o professor via `teacherService.createTeacher` independente da `role` (ADMIN/TEACHER — coordenadores também podem lecionar). Sem esses campos, apenas faz log e ignora. | `EMAIL_ALREADY_EXISTS` ou `CPF_ALREADY_EXISTS` → ignora |
+| `UserDeleted` | `user.deleted` | Busca professor por `user_id` e executa soft-delete (`teacher_status = 2`).      | `TEACHER_NOT_FOUND` → ignora                  |
