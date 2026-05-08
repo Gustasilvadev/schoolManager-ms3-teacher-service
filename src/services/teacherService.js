@@ -20,8 +20,6 @@ const createTeacher = async (teacherData) => {
     teacher_status: teacherData.teacher_status !== undefined ? teacherData.teacher_status : TEACHER_STATUS.ACTIVE
   });
 
-  // FUTURO: publicar evento TeacherCreated no RabbitMQ para criar usuário no AuthService
-
   return newTeacher;
 };
 
@@ -58,6 +56,18 @@ const getTeacherById = async (id) => {
 
 const getTeacherByUserId = async (userId) => {
   const teacher = await teacherRepo.findByUserId(userId);
+  if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  return teacher;
+};
+
+const getTeacherByCpf = async (cpf) => {
+  const teacher = await teacherRepo.findByCpf(cpf);
+  if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  return teacher;
+};
+
+const getTeacherByEmail = async (email) => {
+  const teacher = await teacherRepo.findByEmail(email);
   if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
   return teacher;
 };
@@ -123,6 +133,8 @@ module.exports = {
   getAllTeachers,
   getTeacherById,
   getTeacherByUserId,
+  getTeacherByCpf,
+  getTeacherByEmail,
   getDisciplineIdsByTeacher,
   updateTeacher,
   deleteTeacher,

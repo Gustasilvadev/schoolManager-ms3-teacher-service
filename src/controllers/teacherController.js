@@ -49,8 +49,7 @@ const getTeacherById = async (req, res, next) => {
   }
 };
 
-// Endpoint interno serviço-a-serviço (consumido pelo MS1 no login).
-// Não exige JWT pois é chamado antes do token existir.
+// Endpoint interno serviço-a-serviço (consumido pelo MS1 no login) — não exige JWT pois é chamado antes do token existir.
 const getTeacherByUserId = async (req, res, next) => {
   try {
     const userId = parseInt(req.params.userId);
@@ -67,8 +66,47 @@ const getTeacherByUserId = async (req, res, next) => {
   }
 };
 
-// Endpoint interno serviço-a-serviço (consumido pelo MS4 ao validar
-// alocação de professor em turma). Retorna IDs das disciplinas habilitadas.
+// Endpoint interno serviço-a-serviço — MS1 valida CPF no MS3 antes de criar usuário para evitar inconsistência user-sem-teacher.
+const getTeacherByCpf = async (req, res, next) => {
+  try {
+    const { cpf } = req.params;
+    if (!cpf || typeof cpf !== 'string') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'cpf inválido' });
+    }
+    const teacher = await teacherService.getTeacherByCpf(cpf);
+    return res.status(HTTP_STATUS.OK).json({
+      teacher_id: teacher.teacher_id,
+      teacher_status: teacher.teacher_status
+    });
+  } catch (error) {
+    if (error.message === MESSAGES.TEACHER_NOT_FOUND) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    next(error);
+  }
+};
+
+// Endpoint interno serviço-a-serviço — MS1 valida e-mail no MS3 antes de criar usuário.
+const getTeacherByEmail = async (req, res, next) => {
+  try {
+    const { email } = req.params;
+    if (!email || typeof email !== 'string') {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({ error: 'email inválido' });
+    }
+    const teacher = await teacherService.getTeacherByEmail(email);
+    return res.status(HTTP_STATUS.OK).json({
+      teacher_id: teacher.teacher_id,
+      teacher_status: teacher.teacher_status
+    });
+  } catch (error) {
+    if (error.message === MESSAGES.TEACHER_NOT_FOUND) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    next(error);
+  }
+};
+
+// Endpoint interno serviço-a-serviço — MS4 consulta disciplinas habilitadas ao validar alocação de professor em turma.
 const getTeacherDisciplines = async (req, res, next) => {
   try {
     const teacherId = parseInt(req.params.teacherId);
@@ -150,6 +188,8 @@ module.exports = {
   getAllTeachers,
   getTeacherById,
   getTeacherByUserId,
+  getTeacherByCpf,
+  getTeacherByEmail,
   getTeacherDisciplines,
   updateTeacher,
   deleteTeacher,
