@@ -43,13 +43,15 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 
 ## 👨‍🏫 Teachers (ADMIN)
 
-| Método | Endpoint                          | Descrição                                      | Auth | Body |
-|--------|----------------------------------|-----------------------------------------------|------|------|
-| GET    | `/teachers/listTeachers`         | Lista professores (com paginação e filtros)   | ✅   | — |
-| GET    | `/teachers/listTeacherById/{id}` | Busca professor por ID                        | ✅   | — |
-| POST   | `/teachers/createTeacher`        | Cria novo professor                           | ✅   | teacher_name, teacher_cpf, teacher_email, user_id, teacher_status |
-| PUT    | `/teachers/updateTeacher/{id}`   | Atualiza dados do professor                   | ✅   | teacher_name, teacher_cpf, teacher_email, teacher_status |
-| DELETE | `/teachers/deleteTeacher/{id}`   | Deleta professor (lógico)                     | ✅   | — |
+| Método | Endpoint                              | Descrição                                      | Auth | Body |
+|--------|---------------------------------------|-----------------------------------------------|------|------|
+| GET    | `/teachers/listTeachers`              | Lista professores (filtros: `name`, `cpf`, `email`, `status`, `page`, `limit`) | ✅   | — |
+| GET    | `/teachers/listTeacherById/{id}`      | Busca professor por ID                        | ✅   | — |
+| POST   | `/teachers/createTeacher`             | Cria novo professor                           | ✅   | teacher_name, teacher_cpf, teacher_email, user_id, teacher_status |
+| PUT    | `/teachers/updateTeacherById/{id}`    | Atualiza dados do professor                   | ✅   | teacher_name, teacher_cpf, teacher_email, teacher_status |
+| DELETE | `/teachers/deleteTeacherById/{id}`    | Deleta professor (soft, retorna o registro atualizado) | ✅   | — |
+
+> **`createTeacher` valida o `user_id` no MS1** via Token Propagation antes de criar — retorna `404 USER_NOT_FOUND` se o usuário não existe e `503 EXTERNAL_SERVICE_UNAVAILABLE` se o MS1 estiver indisponível.
 
 ---
 
@@ -60,18 +62,28 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 | POST   | `/teachers/linkDiscipline/{id}`                  | Vincula disciplina ao professor               | ✅   | discipline_id |
 | DELETE | `/teachers/unlinkDiscipline/{id}/{disciplineId}` | Remove vínculo professor-disciplina           | ✅   | — |
 
+> **`linkDiscipline` valida:**
+> - Status do professor — `400 TEACHER_INACTIVE` se o professor estiver inativo (status ≠ 1).
+> - Existência da disciplina via cross-MS no MS4 (Token Propagation) — `404 DISCIPLINE_NOT_FOUND` se não existir.
+> - Duplicidade — `400 ASSOCIATION_ALREADY_EXISTS` se a associação já existe.
+>
+> **`unlinkDiscipline` valida** que a associação realmente existe — `404 ASSOCIATION_NOT_FOUND` caso contrário (antes retornava 200 silencioso).
+
 ---
 
-## 🔌 Endpoints Internos (Service-to-Service, sem JWT)
+## 🔌 Endpoints Internos (Service-to-Service)
 
-Endpoints públicos consumidos por outros microsserviços.
+Endpoints consumidos por outros microsserviços. Após a migração para Token Propagation, **apenas `byUser/{userId}` segue sem JWT** (chamada pelo MS1 durante o login, quando o token ainda não foi emitido). Os demais agora exigem JWT propagado.
 
-| Método | Endpoint                            | Consumidor | Finalidade                                                                |
-|--------|-------------------------------------|------------|---------------------------------------------------------------------------|
-| GET    | `/teachers/byUser/{userId}`         | MS1        | Enriquece o JWT no login com `teacher_id` quando role=TEACHER             |
-| GET    | `/teachers/byCpf/{cpf}`             | MS1        | Validação prévia ao criar usuário — checa se CPF já existe no MS3         |
-| GET    | `/teachers/byEmail/{email}`         | MS1        | Validação prévia ao criar usuário — checa se e-mail já existe no MS3      |
-| GET    | `/teachers/disciplines/{teacherId}` | MS4        | Lista disciplinas habilitadas, usado ao alocar professor em turma         |
+| Método | Endpoint                            | Auth | Consumidor | Finalidade                                                                |
+|--------|-------------------------------------|------|------------|---------------------------------------------------------------------------|
+| GET    | `/teachers/byUser/{userId}`         | ❌   | MS1        | Enriquece o JWT no login com `teacher_id` quando role=TEACHER             |
+| GET    | `/teachers/byCpf/{cpf}`             | ✅   | MS1        | Validação prévia ao criar usuário — checa se CPF já existe (JWT do ADMIN propagado) |
+| GET    | `/teachers/byEmail/{email}`         | ✅   | MS1        | Validação prévia ao criar usuário — checa se e-mail já existe             |
+| GET    | `/teachers/disciplines/{teacherId}` | ✅   | MS4        | Lista disciplinas habilitadas, usado ao alocar professor em turma         |
+| GET    | `/teachers/listTeacherById/{id}`    | ✅   | MS6        | Validação de `teacher_ids` em `createNotice` (JWT do ADMIN propagado)     |
+
+> **Segurança:** o API Gateway bloqueia acesso externo a `/api/teachers/byUser/*` via `internalRouteBlocker` (retorna 404). A rota só é acessível dentro da rede privada — o MS1 chama o MS3 diretamente via `TEACHER_SERVICE_URL`.
 
 ---
 
