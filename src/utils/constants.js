@@ -22,9 +22,15 @@ module.exports = {
     TOKEN_INVALID: 'Token inválido ou expirado',
     FORBIDDEN: 'Acesso negado: permissão insuficiente',
     TEACHER_NOT_FOUND: 'Professor não encontrado',
+    TEACHER_INACTIVE: 'Professor inativo não pode ter disciplinas associadas',
+    DISCIPLINE_NOT_FOUND: 'Disciplina não encontrada',
+    ASSOCIATION_NOT_FOUND: 'Associação entre professor e disciplina não encontrada',
+    ASSOCIATION_ALREADY_EXISTS: 'Disciplina já associada a este professor',
+    USER_NOT_FOUND: 'Usuário não encontrado',
     EMAIL_ALREADY_EXISTS: 'E-mail já cadastrado',
     CPF_ALREADY_EXISTS: 'CPF já cadastrado',
     INVALID_CPF: 'CPF inválido',
-    REQUIRED_FIELD: 'Campo obrigatório não preenchido'
+    REQUIRED_FIELD: 'Campo obrigatório não preenchido',
+    EXTERNAL_SERVICE_UNAVAILABLE: 'Serviço externo indisponível'
   }
 };
