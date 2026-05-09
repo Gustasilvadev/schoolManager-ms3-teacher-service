@@ -1,11 +1,16 @@
 const teacherRepo = require('../repositories/teacherRepository');
 const teacherDisciplineRepo = require('../repositories/teacherDisciplineRepository');
+const { findUserById } = require('../utils/authClient');
+const { findDisciplineById } = require('../utils/classesClient');
 const { MESSAGES, TEACHER_STATUS } = require('../utils/constants');
 
 /**
  * Cria um novo professor
  */
-const createTeacher = async (teacherData) => {
+const createTeacher = async (teacherData, authToken) => {
+  const user = await findUserById(teacherData.user_id, authToken);
+  if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
+
   const existingEmail = await teacherRepo.findByEmail(teacherData.teacher_email);
   if (existingEmail) throw new Error(MESSAGES.EMAIL_ALREADY_EXISTS);
 
@@ -38,6 +43,9 @@ const getAllTeachers = async (filters = {}, page = 1, limit = 10) => {
   }
   if (filters.email && filters.email.trim() !== '') {
     where.teacher_email = { contains: filters.email };
+  }
+  if (filters.status !== undefined && !Number.isNaN(filters.status)) {
+    where.teacher_status = filters.status;
   }
 
   const teachers = await teacherRepo.findAll(skip, limit, where);
@@ -104,18 +112,24 @@ const updateTeacher = async (id, updateData) => {
 const deleteTeacher = async (id) => {
   const teacher = await teacherRepo.findById(id);
   if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
-  await teacherRepo.softDelete(id);
-  return true;
+  return await teacherRepo.softDelete(id);
 };
 
 /**
  * Associa uma disciplina a um professor
  */
-const associateDiscipline = async (teacherId, disciplineId) => {
+const associateDiscipline = async (teacherId, disciplineId, authToken) => {
   const teacher = await teacherRepo.findById(teacherId);
   if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  if (teacher.teacher_status !== TEACHER_STATUS.ACTIVE) {
+    throw new Error(MESSAGES.TEACHER_INACTIVE);
+  }
+
+  const discipline = await findDisciplineById(disciplineId, authToken);
+  if (!discipline) throw new Error(MESSAGES.DISCIPLINE_NOT_FOUND);
+
   const existing = await teacherDisciplineRepo.findByTeacherAndDiscipline(teacherId, disciplineId);
-  if (existing) throw new Error('Disciplina já associada a este professor');
+  if (existing) throw new Error(MESSAGES.ASSOCIATION_ALREADY_EXISTS);
 
   const association = await teacherDisciplineRepo.associate(teacherId, disciplineId);
   return association;
@@ -125,7 +139,10 @@ const associateDiscipline = async (teacherId, disciplineId) => {
  * Remove associação entre professor e disciplina.
  */
 const removeDisciplineAssociation = async (teacherId, disciplineId) => {
+  const existing = await teacherDisciplineRepo.findByTeacherAndDiscipline(teacherId, disciplineId);
+  if (!existing) throw new Error(MESSAGES.ASSOCIATION_NOT_FOUND);
   await teacherDisciplineRepo.removeAssociation(teacherId, disciplineId);
+  return existing;
 };
 
 module.exports = {
