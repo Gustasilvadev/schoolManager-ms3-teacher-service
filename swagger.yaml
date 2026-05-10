@@ -201,7 +201,17 @@ paths:
           schema:
             type: integer
             enum: [0, 1, 2]
-          description: Status do professor
+          description: |
+            Filtro fino por status. Quando informado, sobrepõe o default.
+            Sem este parâmetro, ADMIN recebe apenas registros ACTIVE+INACTIVE (deletados ocultos).
+        - name: includeDeleted
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: |
+            Quando `true`, inclui professores com status DELETED (2). Padrão `false`.
+            Ignorado quando `status` é informado explicitamente.
       responses:
         '200':
           description: Lista de professores
@@ -335,7 +345,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/Teacher'
         '400':
-          description: E-mail ou CPF já existe
+          description: |
+            E-mail/CPF já existe ou registro está deletado (status=2 — use
+            `POST /teachers/restoreTeacherById/{id}` para reativar).
         '404':
           description: Professor não encontrado
         '401':
@@ -372,6 +384,49 @@ paths:
           description: Não autenticado
         '403':
           description: Acesso negado
+
+  /teachers/restoreTeacherById/{id}:
+    post:
+      summary: Restaura um professor deletado (apenas ADMIN)
+      description: |
+        Promove o status do professor de DELETED (2) para ACTIVE (1). Endpoint dedicado
+        para reativação consciente — separa a intenção "editar dados" de
+        "ressuscitar registro" e impede reativação acidental via update.
+      tags:
+        - Teachers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Professor restaurado com sucesso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Professor restaurado com sucesso"
+                  teacher:
+                    $ref: '#/components/schemas/Teacher'
+        '400':
+          description: Professor não está deletado (nada a restaurar)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Token não fornecido ou inválido
+        '403':
+          description: Acesso negado (requer papel ADMIN)
+        '404':
+          description: Professor não encontrado
 
   /teachers/linkDiscipline/{id}:
     post:

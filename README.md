@@ -45,11 +45,13 @@ Para mantermos o histórico limpo e rastreável, este projeto utiliza a especifi
 
 | Método | Endpoint                              | Descrição                                      | Auth | Body |
 |--------|---------------------------------------|-----------------------------------------------|------|------|
-| GET    | `/teachers/listTeachers`              | Lista professores (filtros: `name`, `cpf`, `email`, `status`, `page`, `limit`) | ✅   | — |
+| GET    | `/teachers/listTeachers`              | Lista professores (filtros: `name`, `cpf`, `email`, `status`, `includeDeleted`, `page`, `limit`). Default ADMIN: ACTIVE+INACTIVE. | ✅   | — |
 | GET    | `/teachers/listTeacherById/{id}`      | Busca professor por ID                        | ✅   | — |
 | POST   | `/teachers/createTeacher`             | Cria novo professor                           | ✅   | teacher_name, teacher_cpf, teacher_email, user_id, teacher_status |
-| PUT    | `/teachers/updateTeacherById/{id}`    | Atualiza dados do professor                   | ✅   | teacher_name, teacher_cpf, teacher_email, teacher_status |
-| DELETE | `/teachers/deleteTeacherById/{id}`    | Deleta professor (soft, retorna o registro atualizado) | ✅   | — |
+| PUT    | `/teachers/updateTeacherById/{id}`    | Atualiza dados do professor (bloqueado se status=DELETED) | ✅   | teacher_name, teacher_cpf, teacher_email, teacher_status |
+| DELETE | `/teachers/deleteTeacherById/{id}`    | Deleta professor (soft, status=2)              | ✅   | — |
+| POST   | `/teachers/restoreTeacherById/{id}`   | Restaura professor deletado (status: 2 → 1)   | ✅   | — |
+
 
 > **`createTeacher` valida o `user_id` no MS1** via Token Propagation antes de criar — retorna `404 USER_NOT_FOUND` se o usuário não existe e `503 EXTERNAL_SERVICE_UNAVAILABLE` se o MS1 estiver indisponível.
 
