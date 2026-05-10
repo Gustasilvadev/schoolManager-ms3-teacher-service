@@ -24,6 +24,7 @@ router.get('/listTeacherById/:id', ADMIN_ONLY, teacherController.getTeacherById)
 router.post('/createTeacher', ADMIN_ONLY, validateCreateTeacher, teacherController.createTeacher);
 router.put('/updateTeacherById/:id', ADMIN_ONLY, validateUpdateTeacher, teacherController.updateTeacher);
 router.delete('/deleteTeacherById/:id', ADMIN_ONLY, teacherController.deleteTeacher);
+router.post('/restoreTeacherById/:id', ADMIN_ONLY, teacherController.restoreTeacher);
 
 router.post('/linkDiscipline/:id', ADMIN_ONLY, validateLinkDiscipline, teacherController.associateDiscipline);
 router.delete('/unlinkDiscipline/:id/:disciplineId', ADMIN_ONLY, teacherController.removeDisciplineAssociation);

@@ -52,6 +52,13 @@ const softDelete = async (id) => {
   return result;
 };
 
+const restore = async (id) => {
+  return await prisma.teachers.update({
+    where: { teacher_id: id },
+    data: { teacher_status: TEACHER_STATUS.ACTIVE }
+  });
+};
+
 const count = async (where = {}) => {
   return await prisma.teachers.count({ where });
 };
@@ -65,5 +72,6 @@ module.exports = {
     create,
     update,
     softDelete,
+    restore,
     count
 };

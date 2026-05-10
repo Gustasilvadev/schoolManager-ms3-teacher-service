@@ -2,7 +2,7 @@ const teacherRepo = require('../repositories/teacherRepository');
 const teacherDisciplineRepo = require('../repositories/teacherDisciplineRepository');
 const { findUserById } = require('../utils/authClient');
 const { findDisciplineById } = require('../utils/classesClient');
-const { MESSAGES, TEACHER_STATUS } = require('../utils/constants');
+const { MESSAGES, TEACHER_STATUS, ROLES } = require('../utils/constants');
 
 /**
  * Cria um novo professor
@@ -31,7 +31,7 @@ const createTeacher = async (teacherData, authToken) => {
 /**
  * Lista professores com paginação e filtros
  */
-const getAllTeachers = async (filters = {}, page = 1, limit = 10) => {
+const getAllTeachers = async (filters = {}, page = 1, limit = 10, userRole = ROLES.ADMIN) => {
   const skip = (page - 1) * limit;
   const where = {};
 
@@ -44,8 +44,13 @@ const getAllTeachers = async (filters = {}, page = 1, limit = 10) => {
   if (filters.email && filters.email.trim() !== '') {
     where.teacher_email = { contains: filters.email };
   }
-  if (filters.status !== undefined && !Number.isNaN(filters.status)) {
+
+  if (userRole === ROLES.TEACHER) {
+    where.teacher_status = TEACHER_STATUS.ACTIVE;
+  } else if (filters.status !== undefined && !Number.isNaN(filters.status)) {
     where.teacher_status = filters.status;
+  } else if (filters.includeDeleted !== true) {
+    where.teacher_status = { in: [TEACHER_STATUS.ACTIVE, TEACHER_STATUS.INACTIVE] };
   }
 
   const teachers = await teacherRepo.findAll(skip, limit, where);
@@ -91,6 +96,9 @@ const getDisciplineIdsByTeacher = async (teacherId) => {
 const updateTeacher = async (id, updateData) => {
   const existing = await teacherRepo.findById(id);
   if (!existing) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  if (existing.teacher_status === TEACHER_STATUS.DELETED) {
+    throw new Error(MESSAGES.CANNOT_EDIT_DELETED);
+  }
 
   if (updateData.teacher_email && updateData.teacher_email !== existing.teacher_email) {
     const emailExists = await teacherRepo.findByEmail(updateData.teacher_email);
@@ -113,6 +121,15 @@ const deleteTeacher = async (id) => {
   const teacher = await teacherRepo.findById(id);
   if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
   return await teacherRepo.softDelete(id);
+};
+
+const restoreTeacher = async (id) => {
+  const teacher = await teacherRepo.findById(id);
+  if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  if (teacher.teacher_status !== TEACHER_STATUS.DELETED) {
+    throw new Error(MESSAGES.NOT_DELETED_CANNOT_RESTORE);
+  }
+  return await teacherRepo.restore(id);
 };
 
 /**
@@ -155,6 +172,7 @@ module.exports = {
   getDisciplineIdsByTeacher,
   updateTeacher,
   deleteTeacher,
+  restoreTeacher,
   associateDiscipline,
   removeDisciplineAssociation
 };

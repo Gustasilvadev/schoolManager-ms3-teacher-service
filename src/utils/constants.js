@@ -31,6 +31,9 @@ module.exports = {
     CPF_ALREADY_EXISTS: 'CPF já cadastrado',
     INVALID_CPF: 'CPF inválido',
     REQUIRED_FIELD: 'Campo obrigatório não preenchido',
-    EXTERNAL_SERVICE_UNAVAILABLE: 'Serviço externo indisponível'
+    EXTERNAL_SERVICE_UNAVAILABLE: 'Serviço externo indisponível',
+    CANNOT_EDIT_DELETED: 'Não é possível editar um professor excluído',
+    NOT_DELETED_CANNOT_RESTORE: 'O registro não está excluído',
+    TEACHER_RESTORED: 'Professor restaurado com sucesso'
   }
 };
