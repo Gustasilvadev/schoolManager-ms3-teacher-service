@@ -5,24 +5,28 @@ const authMiddleware = require('../middlewares/authMiddleware');
 const roleMiddleware = require('../middlewares/roleMiddleware');
 const { validateCreateTeacher, validateUpdateTeacher, validateLinkDiscipline } = require('../middlewares/validationMiddleware');
 
-// Endpoints internos (serviço-a-serviço) — ficam antes do authMiddleware.
-// /byUser: consumido pelo MS1 no login para enriquecer o JWT com teacher_id.
-// /disciplines: consumido pelo MS4 ao validar alocação de professor em turma.
+// Endpoint interno serviço-a-serviço — chamado pelo MS1 durante o login (token ainda não foi gerado).
+// O API Gateway DEVE bloquear o acesso externo a esta rota.
 router.get('/byUser/:userId', teacherController.getTeacherByUserId);
-router.get('/disciplines/:teacherId', teacherController.getTeacherDisciplines);
 
 router.use(authMiddleware);
-router.use(roleMiddleware(['ADMIN']));
 
-// Rotas principais de professores
-router.get('/listTeachers', teacherController.getAllTeachers);
-router.get('/listTeacherById/:id', teacherController.getTeacherById);
-router.post('/createTeacher', validateCreateTeacher, teacherController.createTeacher);
-router.put('/updateTeacherById/:id', validateUpdateTeacher, teacherController.updateTeacher);
-router.delete('/deleteTeacherById/:id', teacherController.deleteTeacher);
+const ADMIN_ONLY = roleMiddleware(['ADMIN']);
+const ADMIN_OR_TEACHER = roleMiddleware(['ADMIN', 'TEACHER']);
 
-// Rotas de associação de disciplinas
-router.post('/linkDiscipline/:id', validateLinkDiscipline, teacherController.associateDiscipline);
-router.delete('/unlinkDiscipline/:id/:disciplineId', teacherController.removeDisciplineAssociation);
+// Endpoints utilitários para validação cross-MS — exigem JWT propagado (ADMIN para os fluxos de createUser/createNotice).
+router.get('/byCpf/:cpf', ADMIN_ONLY, teacherController.getTeacherByCpf);
+router.get('/byEmail/:email', ADMIN_ONLY, teacherController.getTeacherByEmail);
+router.get('/disciplines/:teacherId', ADMIN_OR_TEACHER, teacherController.getTeacherDisciplines);
+
+router.get('/listTeachers', ADMIN_ONLY, teacherController.getAllTeachers);
+router.get('/listTeacherById/:id', ADMIN_ONLY, teacherController.getTeacherById);
+router.post('/createTeacher', ADMIN_ONLY, validateCreateTeacher, teacherController.createTeacher);
+router.put('/updateTeacherById/:id', ADMIN_ONLY, validateUpdateTeacher, teacherController.updateTeacher);
+router.delete('/deleteTeacherById/:id', ADMIN_ONLY, teacherController.deleteTeacher);
+router.post('/restoreTeacherById/:id', ADMIN_ONLY, teacherController.restoreTeacher);
+
+router.post('/linkDiscipline/:id', ADMIN_ONLY, validateLinkDiscipline, teacherController.associateDiscipline);
+router.delete('/unlinkDiscipline/:id/:disciplineId', ADMIN_ONLY, teacherController.removeDisciplineAssociation);
 
 module.exports = router;

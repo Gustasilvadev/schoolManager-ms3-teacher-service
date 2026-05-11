@@ -1,11 +1,16 @@
 const teacherRepo = require('../repositories/teacherRepository');
 const teacherDisciplineRepo = require('../repositories/teacherDisciplineRepository');
-const { MESSAGES, TEACHER_STATUS } = require('../utils/constants');
+const { findUserById } = require('../utils/authClient');
+const { findDisciplineById } = require('../utils/classesClient');
+const { MESSAGES, TEACHER_STATUS, ROLES } = require('../utils/constants');
 
 /**
  * Cria um novo professor
  */
-const createTeacher = async (teacherData) => {
+const createTeacher = async (teacherData, authToken) => {
+  const user = await findUserById(teacherData.user_id, authToken);
+  if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
+
   const existingEmail = await teacherRepo.findByEmail(teacherData.teacher_email);
   if (existingEmail) throw new Error(MESSAGES.EMAIL_ALREADY_EXISTS);
 
@@ -20,15 +25,13 @@ const createTeacher = async (teacherData) => {
     teacher_status: teacherData.teacher_status !== undefined ? teacherData.teacher_status : TEACHER_STATUS.ACTIVE
   });
 
-  // FUTURO: publicar evento TeacherCreated no RabbitMQ para criar usuário no AuthService
-
   return newTeacher;
 };
 
 /**
  * Lista professores com paginação e filtros
  */
-const getAllTeachers = async (filters = {}, page = 1, limit = 10) => {
+const getAllTeachers = async (filters = {}, page = 1, limit = 10, userRole = ROLES.ADMIN) => {
   const skip = (page - 1) * limit;
   const where = {};
 
@@ -40,6 +43,14 @@ const getAllTeachers = async (filters = {}, page = 1, limit = 10) => {
   }
   if (filters.email && filters.email.trim() !== '') {
     where.teacher_email = { contains: filters.email };
+  }
+
+  if (userRole === ROLES.TEACHER) {
+    where.teacher_status = TEACHER_STATUS.ACTIVE;
+  } else if (filters.status !== undefined && !Number.isNaN(filters.status)) {
+    where.teacher_status = filters.status;
+  } else if (filters.includeDeleted !== true) {
+    where.teacher_status = { in: [TEACHER_STATUS.ACTIVE, TEACHER_STATUS.INACTIVE] };
   }
 
   const teachers = await teacherRepo.findAll(skip, limit, where);
@@ -62,6 +73,18 @@ const getTeacherByUserId = async (userId) => {
   return teacher;
 };
 
+const getTeacherByCpf = async (cpf) => {
+  const teacher = await teacherRepo.findByCpf(cpf);
+  if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  return teacher;
+};
+
+const getTeacherByEmail = async (email) => {
+  const teacher = await teacherRepo.findByEmail(email);
+  if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  return teacher;
+};
+
 const getDisciplineIdsByTeacher = async (teacherId) => {
   const links = await teacherDisciplineRepo.findByTeacher(teacherId);
   return links.map((l) => l.discipline_id);
@@ -73,6 +96,9 @@ const getDisciplineIdsByTeacher = async (teacherId) => {
 const updateTeacher = async (id, updateData) => {
   const existing = await teacherRepo.findById(id);
   if (!existing) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  if (existing.teacher_status === TEACHER_STATUS.DELETED) {
+    throw new Error(MESSAGES.CANNOT_EDIT_DELETED);
+  }
 
   if (updateData.teacher_email && updateData.teacher_email !== existing.teacher_email) {
     const emailExists = await teacherRepo.findByEmail(updateData.teacher_email);
@@ -94,18 +120,33 @@ const updateTeacher = async (id, updateData) => {
 const deleteTeacher = async (id) => {
   const teacher = await teacherRepo.findById(id);
   if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
-  await teacherRepo.softDelete(id);
-  return true;
+  return await teacherRepo.softDelete(id);
+};
+
+const restoreTeacher = async (id) => {
+  const teacher = await teacherRepo.findById(id);
+  if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  if (teacher.teacher_status !== TEACHER_STATUS.DELETED) {
+    throw new Error(MESSAGES.NOT_DELETED_CANNOT_RESTORE);
+  }
+  return await teacherRepo.restore(id);
 };
 
 /**
  * Associa uma disciplina a um professor
  */
-const associateDiscipline = async (teacherId, disciplineId) => {
+const associateDiscipline = async (teacherId, disciplineId, authToken) => {
   const teacher = await teacherRepo.findById(teacherId);
   if (!teacher) throw new Error(MESSAGES.TEACHER_NOT_FOUND);
+  if (teacher.teacher_status !== TEACHER_STATUS.ACTIVE) {
+    throw new Error(MESSAGES.TEACHER_INACTIVE);
+  }
+
+  const discipline = await findDisciplineById(disciplineId, authToken);
+  if (!discipline) throw new Error(MESSAGES.DISCIPLINE_NOT_FOUND);
+
   const existing = await teacherDisciplineRepo.findByTeacherAndDiscipline(teacherId, disciplineId);
-  if (existing) throw new Error('Disciplina já associada a este professor');
+  if (existing) throw new Error(MESSAGES.ASSOCIATION_ALREADY_EXISTS);
 
   const association = await teacherDisciplineRepo.associate(teacherId, disciplineId);
   return association;
@@ -115,7 +156,10 @@ const associateDiscipline = async (teacherId, disciplineId) => {
  * Remove associação entre professor e disciplina.
  */
 const removeDisciplineAssociation = async (teacherId, disciplineId) => {
+  const existing = await teacherDisciplineRepo.findByTeacherAndDiscipline(teacherId, disciplineId);
+  if (!existing) throw new Error(MESSAGES.ASSOCIATION_NOT_FOUND);
   await teacherDisciplineRepo.removeAssociation(teacherId, disciplineId);
+  return existing;
 };
 
 module.exports = {
@@ -123,9 +167,12 @@ module.exports = {
   getAllTeachers,
   getTeacherById,
   getTeacherByUserId,
+  getTeacherByCpf,
+  getTeacherByEmail,
   getDisciplineIdsByTeacher,
   updateTeacher,
   deleteTeacher,
+  restoreTeacher,
   associateDiscipline,
   removeDisciplineAssociation
 };

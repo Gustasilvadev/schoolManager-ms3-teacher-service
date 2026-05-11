@@ -9,7 +9,6 @@ const validate = (req, res, next) => {
   next();
 };
 
-// Validação para criação de professor
 const validateCreateTeacher = [
   body('teacher_name')
     .notEmpty().withMessage('Nome do professor é obrigatório')
@@ -29,7 +28,6 @@ const validateCreateTeacher = [
   validate
 ];
 
-// Validação para atualização de professor
 const validateUpdateTeacher = [
   body('teacher_name')
     .optional()
@@ -53,7 +51,6 @@ const validateUpdateTeacher = [
   validate
 ];
 
-// Validação para vincular disciplina a professor
 const validateLinkDiscipline = [
   body('discipline_id')
     .notEmpty().withMessage('ID da disciplina é obrigatório')
