@@ -57,6 +57,9 @@ const startConsuming = async (channel) => {
   await channel.bindQueue(QUEUE_NAME, process.env.RABBITMQ_EXCHANGE, 'user.created');
   await channel.bindQueue(QUEUE_NAME, process.env.RABBITMQ_EXCHANGE, 'user.deleted');
 
+  await channel.assertQueue('ms3.user.events.dlq', { durable: true });
+  await channel.bindQueue('ms3.user.events.dlq', process.env.RABBITMQ_DLQ_EXCHANGE, '#');
+
   await channel.consume(QUEUE_NAME, async (msg) => {
     if (!msg) return;
     console.log("MENSAGEM RECEBIDA:", msg.content.toString());
