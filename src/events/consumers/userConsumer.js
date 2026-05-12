@@ -17,7 +17,7 @@ const handleUserCreated = async (event) => {
       teacher_cpf,
       teacher_email: user_email,
       user_id
-    });
+    }, null, { skipUserValidation: true });
     console.log(`[MS3 consumer] Teacher criado para user_id=${user_id} (role=${role})`);
   } catch (err) {
     if (err.message === MESSAGES.EMAIL_ALREADY_EXISTS || err.message === MESSAGES.CPF_ALREADY_EXISTS) {

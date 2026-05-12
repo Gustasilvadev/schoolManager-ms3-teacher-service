@@ -7,9 +7,11 @@ const { MESSAGES, TEACHER_STATUS, ROLES } = require('../utils/constants');
 /**
  * Cria um novo professor
  */
-const createTeacher = async (teacherData, authToken) => {
-  const user = await findUserById(teacherData.user_id, authToken);
-  if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
+const createTeacher = async (teacherData, authToken, { skipUserValidation = false } = {}) => {
+  if (!skipUserValidation) {
+    const user = await findUserById(teacherData.user_id, authToken);
+    if (!user) throw new Error(MESSAGES.USER_NOT_FOUND);
+  }
 
   const existingEmail = await teacherRepo.findByEmail(teacherData.teacher_email);
   if (existingEmail) throw new Error(MESSAGES.EMAIL_ALREADY_EXISTS);
