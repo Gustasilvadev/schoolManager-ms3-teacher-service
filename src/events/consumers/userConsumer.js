@@ -17,7 +17,7 @@ const handleUserCreated = async (event) => {
       teacher_cpf,
       teacher_email: user_email,
       user_id
-    });
+    }, null, { skipUserValidation: true });
     console.log(`[MS3 consumer] Teacher criado para user_id=${user_id} (role=${role})`);
   } catch (err) {
     if (err.message === MESSAGES.EMAIL_ALREADY_EXISTS || err.message === MESSAGES.CPF_ALREADY_EXISTS) {
@@ -56,6 +56,9 @@ const startConsuming = async (channel) => {
 
   await channel.bindQueue(QUEUE_NAME, process.env.RABBITMQ_EXCHANGE, 'user.created');
   await channel.bindQueue(QUEUE_NAME, process.env.RABBITMQ_EXCHANGE, 'user.deleted');
+
+  await channel.assertQueue('ms3.user.events.dlq', { durable: true });
+  await channel.bindQueue('ms3.user.events.dlq', process.env.RABBITMQ_DLQ_EXCHANGE, '#');
 
   await channel.consume(QUEUE_NAME, async (msg) => {
     if (!msg) return;
