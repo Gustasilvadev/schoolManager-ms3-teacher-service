@@ -56,6 +56,18 @@ const getTeacherById = async (req, res, next) => {
   }
 };
 
+const getMyTeacher = async (req, res, next) => {
+  try {
+    const teacher = await teacherService.getTeacherByUserId(req.user.id);
+    return res.status(HTTP_STATUS.OK).json(teacher);
+  } catch (error) {
+    if (error.message === MESSAGES.TEACHER_NOT_FOUND) {
+      return res.status(HTTP_STATUS.NOT_FOUND).json({ error: error.message });
+    }
+    next(error);
+  }
+};
+
 // Endpoint interno serviço-a-serviço (consumido pelo MS1 no login) — não exige JWT pois é chamado antes do token existir.
 const getTeacherByUserId = async (req, res, next) => {
   try {
@@ -222,6 +234,7 @@ module.exports = {
   createTeacher,
   getAllTeachers,
   getTeacherById,
+  getMyTeacher,
   getTeacherByUserId,
   getTeacherByCpf,
   getTeacherByEmail,

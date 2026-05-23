@@ -14,6 +14,8 @@ router.use(authMiddleware);
 const ADMIN_ONLY = roleMiddleware(['ADMIN']);
 const ADMIN_OR_TEACHER = roleMiddleware(['ADMIN', 'TEACHER']);
 
+router.get('/me', ADMIN_OR_TEACHER, teacherController.getMyTeacher);
+
 // Endpoints utilitários para validação cross-MS — exigem JWT propagado (ADMIN para os fluxos de createUser/createNotice).
 router.get('/byCpf/:cpf', ADMIN_ONLY, teacherController.getTeacherByCpf);
 router.get('/byEmail/:email', ADMIN_ONLY, teacherController.getTeacherByEmail);
