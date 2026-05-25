@@ -97,6 +97,46 @@ paths:
                     type: string
                     example: "teacher-service"
 
+  /teachers/byUser/{userId}:
+    get:
+      summary: "(Interno) Obtém o teacher_id a partir do user_id"
+      description: |
+        Endpoint serviço-a-serviço. **Não exige JWT** — é chamado pelo MS1 durante o
+        login, antes de o token ser gerado. O API Gateway DEVE bloquear o acesso
+        externo a esta rota.
+      tags:
+        - Internal
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do usuário (AuthService) vinculado ao professor
+      responses:
+        '200':
+          description: Professor encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  teacher_id:
+                    type: integer
+                    example: 1
+        '400':
+          description: userId inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Nenhum professor vinculado a esse user_id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /teachers/byCpf/{cpf}:
     get:
       summary: "(Interno) Verifica se um CPF já existe no MS3"
@@ -162,6 +202,36 @@ paths:
           description: Nenhum professor com esse e-mail
         '400':
           description: E-mail inválido
+
+  /teachers/me:
+    get:
+      summary: Retorna o professor vinculado ao usuário autenticado (ADMIN ou TEACHER)
+      description: |
+        Resolve o professor a partir do `user_id` presente no JWT. Usado pelo MS1
+        (`GET /users/me`) para compor o perfil completo do usuário autenticado.
+      tags:
+        - Teachers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dados do professor autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Teacher'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Nenhum professor vinculado ao usuário autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /teachers/listTeachers:
     get:
@@ -427,6 +497,55 @@ paths:
           description: Acesso negado (requer papel ADMIN)
         '404':
           description: Professor não encontrado
+
+  /teachers/disciplines/{teacherId}:
+    get:
+      summary: Lista os IDs das disciplinas habilitadas de um professor (ADMIN ou TEACHER)
+      description: |
+        Utilitário cross-MS — consumido pelo MS4 (ClassesService) ao validar a
+        alocação de um professor em uma turma. Exige JWT propagado.
+      tags:
+        - Teacher Disciplines
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: teacherId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID do professor
+      responses:
+        '200':
+          description: IDs das disciplinas habilitadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  discipline_ids:
+                    type: array
+                    items:
+                      type: integer
+                    example: [3, 7, 12]
+        '400':
+          description: teacherId inválido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Não autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Acesso negado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /teachers/linkDiscipline/{id}:
     post:
