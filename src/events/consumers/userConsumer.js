@@ -1,4 +1,5 @@
 const teacherService = require('../../services/teacherService');
+const { sendTeacherWelcomeEmail } = require('../../utils/email/emailService');
 const { MESSAGES } = require('../../utils/constants');
 
 const QUEUE_NAME = 'ms3.user.events';
@@ -19,6 +20,11 @@ const handleUserCreated = async (event) => {
       user_id
     }, null, { skipUserValidation: true });
     console.log(`[MS3 consumer] Teacher criado para user_id=${user_id} (role=${role})`);
+    try {
+      await sendTeacherWelcomeEmail({ to: user_email, teacherName: teacher_name });
+    } catch (mailErr) {
+      console.error(`[MS3][email] Falha ao enviar boas-vindas para ${user_email}:`, mailErr.message);
+    }
   } catch (err) {
     if (err.message === MESSAGES.EMAIL_ALREADY_EXISTS || err.message === MESSAGES.CPF_ALREADY_EXISTS) {
       console.log(`[MS3 consumer] UserCreated idempotente (${err.message}) user_id=${user_id}`);
