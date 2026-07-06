@@ -57,7 +57,16 @@ const getAllTeachers = async (filters = {}, page = 1, limit = 10, userRole = ROL
 
   const teachers = await teacherRepo.findAll(skip, limit, where);
   const total = await teacherRepo.count(where);
-  return { teachers, total, page, limit };
+
+  const counts = await teacherDisciplineRepo.countByTeacherIds(
+    teachers.map((t) => t.teacher_id)
+  );
+  const teachersWithCount = teachers.map((t) => ({
+    ...t,
+    discipline_count: counts[t.teacher_id] ?? 0
+  }));
+
+  return { teachers: teachersWithCount, total, page, limit };
 };
 
 /**

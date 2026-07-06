@@ -45,9 +45,26 @@ const findByTeacher = async (teacherId) => {
   });
 };
 
+/**
+ * Conta disciplinas habilitadas para vários professores numa única query.
+ */
+const countByTeacherIds = async (teacherIds) => {
+  if (!teacherIds || teacherIds.length === 0) return {};
+  const rows = await prisma.teacher_disciplines.groupBy({
+    by: ['teacher_id'],
+    where: { teacher_id: { in: teacherIds } },
+    _count: { discipline_id: true }
+  });
+  return rows.reduce((acc, row) => {
+    acc[row.teacher_id] = row._count.discipline_id;
+    return acc;
+  }, {});
+};
+
 module.exports = {
   associate,
   removeAssociation,
   findByTeacherAndDiscipline,
-  findByTeacher
+  findByTeacher,
+  countByTeacherIds
 };
